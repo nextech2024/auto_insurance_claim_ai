@@ -7,13 +7,13 @@ import plotly.express as px
 # Load from DynamoDB
 def load_claims_from_dynamodb():
     session = boto3.Session(
-     aws_access_key_id=st.secrets["AWS_ACCESS_KEY_ID"],
+        aws_access_key_id=st.secrets["AWS_ACCESS_KEY_ID"],
         aws_secret_access_key=st.secrets["AWS_SECRET_ACCESS_KEY"],
         region_name=st.secrets["AWS_REGION"]
-)
+    )
 
-dynamodb = session.resource('dynamodb')
-table = dynamodb.Table(st.secrets["DYNAMODB_TABLE_NAME"])
+    dynamodb = session.resource('dynamodb')
+    table = dynamodb.Table(st.secrets["DYNAMODB_TABLE_NAME"])
 
     response = table.scan()
     items = response.get("Items", [])
@@ -35,7 +35,9 @@ table = dynamodb.Table(st.secrets["DYNAMODB_TABLE_NAME"])
             })
         except Exception as e:
             st.warning(f"Error parsing claim: {e}")
+
     return pd.DataFrame(claims)
+
 
 # Build Dashboard UI
 st.set_page_config(page_title="Claim Dashboard", layout="wide")

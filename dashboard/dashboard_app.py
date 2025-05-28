@@ -12,7 +12,7 @@ st.title("📊 AI-Powered Auto Insurance Claim Dashboard")
 
 # Add a Refresh Button
 if st.button("🔄 Refresh Claims Table"):
-    st.experimental_rerun()
+    st.rerun()
 
 # -----------------------------
 # 📦 Load from DynamoDB

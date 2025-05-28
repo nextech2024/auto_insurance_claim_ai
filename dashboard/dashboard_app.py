@@ -6,8 +6,15 @@ import plotly.express as px
 
 # Load from DynamoDB
 def load_claims_from_dynamodb():
-    dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
-    table = dynamodb.Table("ClaimReports")
+    session = boto3.Session(
+     aws_access_key_id=st.secrets["AWS_ACCESS_KEY_ID"],
+        aws_secret_access_key=st.secrets["AWS_SECRET_ACCESS_KEY"],
+        region_name=st.secrets["AWS_REGION"]
+)
+
+dynamodb = session.resource('dynamodb')
+table = dynamodb.Table(st.secrets["DYNAMODB_TABLE_NAME"])
+
     response = table.scan()
     items = response.get("Items", [])
     claims = []

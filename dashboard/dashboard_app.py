@@ -4,7 +4,19 @@ import pandas as pd
 import json
 import plotly.express as px
 
-# Load from DynamoDB
+# -----------------------------
+# 🔄 Manual Refresh
+# -----------------------------
+st.set_page_config(page_title="Claim Dashboard", layout="wide")
+st.title("📊 AI-Powered Auto Insurance Claim Dashboard")
+
+# Add a Refresh Button
+if st.button("🔄 Refresh Claims Table"):
+    st.experimental_rerun()
+
+# -----------------------------
+# 📦 Load from DynamoDB
+# -----------------------------
 def load_claims_from_dynamodb():
     session = boto3.Session(
         aws_access_key_id=st.secrets["AWS_ACCESS_KEY_ID"],
@@ -39,26 +51,24 @@ def load_claims_from_dynamodb():
     return pd.DataFrame(claims)
 
 
-# Build Dashboard UI
-st.set_page_config(page_title="Claim Dashboard", layout="wide")
-st.title("📊 AI-Powered Auto Insurance Claim Dashboard")
-
-# Load claims once
+# -----------------------------
+# 📊 Build Dashboard
+# -----------------------------
 df = load_claims_from_dynamodb()
 
 # ✅ Optional Filters
 st.sidebar.header("🔍 Filter Claims")
 
 # Damage Type Filter
-damage_types = df["Damage Type"].unique().tolist()  # Use df instead of filtered_df
+damage_types = df["Damage Type"].unique().tolist()
 selected_damage = st.sidebar.multiselect("Filter by Damage Type", damage_types, default=damage_types)
 
 # Fraud Status Filter
-fraud_status = df["Fraud"].unique().tolist()  # Use df instead of filtered_df
+fraud_status = df["Fraud"].unique().tolist()
 selected_fraud = st.sidebar.multiselect("Filter by Fraud Status", fraud_status, default=fraud_status)
 
 # Date Range Filter
-df["Date"] = pd.to_datetime(df["Date"])  # Ensure Date column is in datetime format
+df["Date"] = pd.to_datetime(df["Date"])
 min_date = df["Date"].min()
 max_date = df["Date"].max()
 start_date, end_date = st.sidebar.date_input("Filter by Date Range", [min_date, max_date])
@@ -71,6 +81,9 @@ filtered_df = df[
     (df["Date"] <= pd.to_datetime(end_date))
 ]
 
+# -----------------------------
+# 📈 Visuals
+# -----------------------------
 if filtered_df.empty:
     st.info("No claims found for the selected filters.")
 else:
@@ -81,9 +94,8 @@ else:
     with col1:
         st.subheader("🔧 Claims by Damage Type")
         damage_counts = filtered_df["Damage Type"].value_counts().reset_index()
-        damage_counts.columns = ["Damage Type", "Count"]  # Rename columns
-        damage_fig = px.bar(damage_counts, x="Damage Type", y="Count",
-                            labels={"Damage Type": "Damage Type", "Count": "Count"})
+        damage_counts.columns = ["Damage Type", "Count"]
+        damage_fig = px.bar(damage_counts, x="Damage Type", y="Count")
         st.plotly_chart(damage_fig, use_container_width=True)
 
     with col2:

@@ -1,5 +1,6 @@
 streamlit
 pandas
+matplotlib
 boto3
-plotly
 Pillow
+

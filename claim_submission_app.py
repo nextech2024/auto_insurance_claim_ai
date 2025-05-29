@@ -146,7 +146,27 @@ if submitted:
         try:
             send_email_via_ses(
                 subject=f"Claim Report for {claim_id}",
-                body=json.dumps(combined_result, indent=2),
+                body = f"""\
+Claim Submission Summary
+
+✔ Claim ID: {claim_id}
+✔ VIN: {vin}
+✔ Policy Number: {policy_number}
+✔ Claim Date: {claim_date}
+✔ Image URL: {image_url}
+
+🧚 AI Damage Assessment:
+- Damage Type: {damage_result['damage_type']}
+- Severity: {damage_result['severity']}
+
+🔎 Claim Risk Insights:
+- Risk Score: {risk_score}
+- Risk Factors:
+  {chr(10).join(f"- {r}" for r in reasons)}
+
+Thank you for submitting your claim. A claims specialist will review it and contact you within 24 hours.
+"""
+
                 sender="sales@nextech-usa.com",
                 recipient="aqeelqureshi@yahoo.com"
             )

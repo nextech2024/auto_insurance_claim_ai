@@ -165,7 +165,7 @@ Claim Submission Summary
   {chr(10).join(f"- {r}" for r in reasons)}
 
 Thank you for submitting your claim. A claims specialist will review it and contact you within 24 hours.
-"""
+""",
 
                 sender="sales@nextech-usa.com",
                 recipient="aqeelqureshi@yahoo.com"

@@ -154,37 +154,8 @@ if submitted:
         except Exception as e:
             st.error(f"❌ Email failed: {e}")
 
-        st.subheader("🧚 AI Prediction Result")
-        st.write(f"**Damage Type:** {damage_result['damage_type']}")
-        st.write(f"**Severity:** {damage_result['severity']}")
-
-        st.subheader("🛡️ Fraud Analysis")
-        st.write(f"**Fraud Suspected:** {'Yes' if is_fraud else 'No'}")
-        st.write(f"**Risk Score:** {risk_score}")
-        st.write("**Reasons:**")
-        for r in reasons:
-            st.write(f"- {r}")
-
-        # --- Timeline of Claims ---
-        st.subheader("🗓️ Timeline of Claims")
-
-        def extract_fraud(row):
-            try:
-                if "fraud_detected" in row and pd.notna(row["fraud_detected"]):
-                    return "Yes" if json.loads(row["fraud_detected"])["is_fraud"] else "No"
-                else:
-                    return "Unknown"
-            except Exception:
-                return "Unknown"
-
-        history_df["Claim Date"] = pd.to_datetime(history_df["claim_date"], errors="coerce")
-        history_df["Fraud"] = history_df.apply(extract_fraud, axis=1)
-
-        timeline_fig = px.histogram(
-            history_df,
-            x="Claim Date",
-            color="Fraud",
-            nbins=30,
-            title="📊 Claims Over Time"
-        )
-        st.plotly_chart(timeline_fig, use_container_width=True)
+        # ✅ Final output for policyholder only
+        st.markdown("---")
+        st.header("✅ Claim Submitted")
+        st.success("Thank you for submitting your claim.")
+        st.info("Your claim is under review. A claims specialist will contact you within 24 hours.")

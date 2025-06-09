@@ -14,16 +14,33 @@ st.title("🚗 AI-Powered Auto Insurance Claim Submission")
 # --- Upload to S3
 def upload_to_s3(file_data, filename, bucket="auto-insurance-claims-images-2025"):
     try:
-        s3 = boto3.client('s3')
+        session = boto3.Session(
+            aws_access_key_id=st.secrets["AWS_ACCESS_KEY_ID"],
+            aws_secret_access_key=st.secrets["AWS_SECRET_ACCESS_KEY"],
+            region_name=st.secrets["AWS_REGION"]
+        )
+        s3 = session.client("s3")
         s3.upload_fileobj(file_data, bucket, filename)
         return f"https://{bucket}.s3.amazonaws.com/{filename}"
     except NoCredentialsError:
-        return "❌ AWS credentials not found."
+        st.error("❌ AWS credentials not found. Please configure your credentials.")
+        return None
+    except boto3.exceptions.S3UploadFailedError as e:
+        st.error(f"❌ Failed to upload to S3: {e}")
+        return None
+    except Exception as e:
+        st.error(f"❌ An unexpected error occurred: {e}")
+        return None
+
 
 # --- Load claim history
 @st.cache_data
 def load_history():
-    return pd.read_csv("claims_history.csv")
+    try:
+        return pd.read_csv("claims_history.csv")
+    except FileNotFoundError:
+        st.error("❌ 'claims_history.csv' file not found. Please ensure the file exists.")
+        return pd.DataFrame()
 
 # --- Damage Detection Simulation
 def detect_damage(uploaded_image):
@@ -63,30 +80,38 @@ def calculate_risk_score(claim, history_df):
 
 # --- Save to DynamoDB
 def save_to_dynamodb(report):
-    item = {
-        "claim_id": str(report.get("claim_id", "UNKNOWN")),
-        "vin": str(report.get("vin", "UNKNOWN")),
-        "policy_number": str(report.get("policy_number", "UNKNOWN")),
-        "claim_date": str(report.get("claim_date", "")),
-        "image_url": str(report.get("image_url", "")),
-        "damage_detected": json.dumps(report.get("damage_detected", {})),
-        "fraud_detected": json.dumps(report.get("fraud_detected", {}))
-    }
-    dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
-    table = dynamodb.Table("ClaimReports")
-    table.put_item(Item=item)
+    try:
+        item = {
+            "claim_id": str(report.get("claim_id", "UNKNOWN")),
+            "vin": str(report.get("vin", "UNKNOWN")),
+            "policy_number": str(report.get("policy_number", "UNKNOWN")),
+            "claim_date": str(report.get("claim_date", "")),
+            "image_url": str(report.get("image_url", "")),
+            "damage_detected": json.dumps(report.get("damage_detected", {})),
+            "fraud_detected": json.dumps(report.get("fraud_detected", {}))
+        }
+        dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
+        table = dynamodb.Table("ClaimReports")
+        table.put_item(Item=item)
+        st.success("✅ Claim report saved to DynamoDB.")
+    except Exception as e:
+        st.error(f"❌ Failed to save to DynamoDB: {e}")
 
 # --- Send Email via SES
 def send_email_via_ses(subject, body, sender, recipient):
-    ses = boto3.client('ses', region_name="us-east-1")
-    ses.send_email(
-        Source=sender,
-        Destination={"ToAddresses": [recipient]},
-        Message={
-            "Subject": {"Data": subject},
-            "Body": {"Text": {"Data": body}}
-        }
-    )
+    try:
+        ses = boto3.client('ses', region_name="us-east-1")
+        ses.send_email(
+            Source=sender,
+            Destination={"ToAddresses": [recipient]},
+            Message={
+                "Subject": {"Data": subject},
+                "Body": {"Text": {"Data": body}}
+            }
+        )
+        st.success("📧 Email sent successfully!")
+    except Exception as e:
+        st.error(f"❌ Email failed: {e}")
 
 # --- Streamlit UI
 with st.form("claim_form"):
@@ -139,7 +164,6 @@ if submitted:
 
         try:
             save_to_dynamodb(combined_result)
-            st.success("✅ Claim report saved to DynamoDB.")
         except Exception as e:
             st.error(f"❌ Failed to save to DynamoDB: {e}")
 
@@ -166,15 +190,12 @@ Claim Submission Summary
 
 Thank you for submitting your claim. A claims specialist will review it and contact you within 24 hours.
 """,
-
                 sender="sales@nextech-usa.com",
                 recipient="aqeelqureshi@yahoo.com"
             )
-            st.success("📧 Email sent successfully!")
         except Exception as e:
             st.error(f"❌ Email failed: {e}")
 
-        # ✅ Final output for policyholder only
         st.markdown("---")
         st.header("✅ Claim Submitted")
         st.success("Thank you for submitting your claim.")
